@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~56.0.11",
+    "@react-native-kakao/core": "^2.4.5",
+    "@react-native-kakao/user": "^2.4.5",
     "expo": "~56.0.3",
+    "expo-build-properties": "~56.0.14",
     "expo-constants": "~56.0.14",
     "expo-dev-client": "~56.0.14",
     "expo-device": "~56.0.4",
