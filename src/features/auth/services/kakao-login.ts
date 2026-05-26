@@ -2,8 +2,7 @@ import {initializeKakaoSDK} from '@react-native-kakao/core';
 import {login} from '@react-native-kakao/user';
 
 import {kakaoNativeAppKey} from '@/constants/kakao';
-import {SocialLoginRequest, SocialLoginResponse, SocialLoginResult} from '@/features/auth/types';
-import {getMyInfoWithKakaoToken} from "@/api/auth/AuthApiClient";
+import {SocialLoginResult} from '@/features/auth/types';
 
 let kakaoSdkInitialization: Promise<void> | null = null;
 
@@ -29,8 +28,4 @@ export async function loginWithKakao(): Promise<SocialLoginResult> {
         refreshTokenExpiresAt: token.refreshTokenExpiresAt,
         scopes: token.scopes,
     };
-}
-
-export async function getTokenByKakao(socialLoginRequest: SocialLoginRequest): Promise<SocialLoginResponse> {
-    return await getMyInfoWithKakaoToken(socialLoginRequest);
 }

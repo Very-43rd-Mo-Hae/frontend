@@ -1,5 +1,19 @@
-import axios, {AxiosError, InternalAxiosRequestConfig} from "axios";
+import {create} from "axios";
+import type {
+    AxiosError,
+    AxiosRequestConfig,
+    AxiosResponse,
+    InternalAxiosRequestConfig,
+} from "axios";
 import * as SecureStore from "expo-secure-store";
+
+type ApiEnvelope<T> = {
+    data: T;
+    message?: string;
+    errorCode?: string;
+};
+
+type ApiResponse<T> = ApiEnvelope<T> | T;
 
 export class ApiError extends Error {
     status: number;
@@ -24,13 +38,28 @@ export class AuthenticationError extends ApiError {
     }
 }
 
-const api = axios.create({
+const clientConfig = {
     baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
     timeout: 10000,
     headers: {
         "Content-Type": "application/json",
     },
-});
+};
+
+const api = create(clientConfig);
+const publicApi = create(clientConfig);
+
+function isApiEnvelope<T>(data: ApiResponse<T>): data is ApiEnvelope<T> {
+    return typeof data === "object" && data !== null && "data" in data;
+}
+
+const unwrapData = <T>(response: AxiosResponse<ApiResponse<T>>) => {
+    if (isApiEnvelope(response.data)) {
+        return response.data.data;
+    }
+
+    return response.data;
+};
 
 let refreshPromise: Promise<void> | null = null;
 
@@ -69,7 +98,7 @@ api.interceptors.response.use(
                 }
 
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch {
                 refreshPromise = null;
 
                 await SecureStore.deleteItemAsync("accessToken");
@@ -87,7 +116,9 @@ api.interceptors.response.use(
 
         const errorCode =
             errorData?.data?.errorCode ||
-            errorData?.errorCode;
+            errorData?.errorCode ||
+            errorData?.data?.name ||
+            errorData?.name;
 
         throw new ApiError(message, status ?? 500, errorCode);
     }
@@ -101,8 +132,8 @@ async function refreshAccessToken() {
     }
 
     // TODO : 추후 올바른 경로로 토큰 재발급 API 연결
-    const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/re-issue`,
+    const response = await publicApi.post(
+        "/auth/re-issue",
         {},
         {
             headers: {
@@ -120,4 +151,33 @@ async function refreshAccessToken() {
     }
 }
 
-export default api;
+const apiClient = {
+    get: async <T>(url: string, config?: AxiosRequestConfig) => {
+        const response = await api.get<ApiResponse<T>>(url, config);
+
+        return unwrapData(response);
+    },
+    post: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => {
+        const response = await api.post<ApiResponse<T>>(url, data, config);
+
+        return unwrapData(response);
+    },
+    put: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => {
+        const response = await api.put<ApiResponse<T>>(url, data, config);
+
+        return unwrapData(response);
+    },
+    patch: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => {
+        const response = await api.patch<ApiResponse<T>>(url, data, config);
+
+        return unwrapData(response);
+    },
+    delete: async <T>(url: string, config?: AxiosRequestConfig) => {
+        const response = await api.delete<ApiResponse<T>>(url, config);
+
+        return unwrapData(response);
+    },
+};
+
+export {api};
+export default apiClient;
