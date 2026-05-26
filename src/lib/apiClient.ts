@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, {AxiosError, InternalAxiosRequestConfig} from "axios";
 import * as SecureStore from "expo-secure-store";
 
 export class ApiError extends Error {
@@ -111,7 +111,7 @@ async function refreshAccessToken() {
         }
     );
 
-    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+    const {accessToken, refreshToken: newRefreshToken} = response.data.data;
 
     await SecureStore.setItemAsync("accessToken", accessToken);
 

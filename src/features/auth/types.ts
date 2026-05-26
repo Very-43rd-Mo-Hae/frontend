@@ -1,9 +1,22 @@
-export type SocialLoginProvider = 'kakao' | 'google' | 'apple';
+export type SocialLoginProvider = 'KAKAO' | 'GOOGLE' | 'APPLE';
 
 export type SocialLoginResult = {
-  provider: SocialLoginProvider;
-  accessToken?: string;
-  accessTokenExpiresAt?: number;
-  refreshTokenExpiresAt?: number;
-  scopes?: string[];
+    provider: SocialLoginProvider;
+    accessToken?: string;
+    accessTokenExpiresAt?: number;
+    refreshTokenExpiresAt?: number;
+    scopes?: string[];
 };
+
+export type SocialLoginRequest = {
+    provider: SocialLoginProvider;
+    idToken?: string;
+    accessToken?: string;
+    name?: string;
+}
+
+export type SocialLoginResponse = {
+    memberId: number;
+    accessToken: string;
+    accessTokenExpireIn: string;
+}
