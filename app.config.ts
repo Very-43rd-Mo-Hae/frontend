@@ -1,6 +1,8 @@
 import type { ExpoConfig } from 'expo/config';
 
 const kakaoNativeAppKey = process.env.KAKAO_NATIVE_APP_KEY;
+const googleWebClientId = process.env.GOOGLE_WEB_CLIENT_ID;
+const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME;
 
 if (!kakaoNativeAppKey) {
   throw new Error('KAKAO_NATIVE_APP_KEY 환경변수가 설정되어 있지 않습니다.');
@@ -64,6 +66,14 @@ const config: ExpoConfig = {
         },
       },
     ],
+    googleIosUrlScheme
+      ? [
+          '@react-native-google-signin/google-signin',
+          {
+            iosUrlScheme: googleIosUrlScheme,
+          },
+        ]
+      : '@react-native-google-signin/google-signin',
   ],
   experiments: {
     typedRoutes: true,
@@ -76,6 +86,8 @@ const config: ExpoConfig = {
     },
     kakaoNativeAppKey,
     kakaoNativeAppKeyConfigured: true,
+    googleWebClientId,
+    googleWebClientIdConfigured: Boolean(googleWebClientId),
   },
 };
 

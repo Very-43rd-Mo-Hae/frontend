@@ -7,6 +7,7 @@ import {
     SocialLoginResponse,
     SocialLoginResult,
 } from "@/features/auth/types";
+import {loginWithGoogle} from "@/features/auth/services/google-login";
 
 async function getSocialProviderCredential(
     provider: SocialLoginProvider,
@@ -15,6 +16,7 @@ async function getSocialProviderCredential(
         case "KAKAO":
             return loginWithKakao();
         case "GOOGLE":
+            return loginWithGoogle();
         case "APPLE":
             throw new Error(`${provider} 로그인이 아직 준비 중입니다.`);
         default:
