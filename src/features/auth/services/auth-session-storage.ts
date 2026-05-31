@@ -4,5 +4,6 @@ import type {SocialLoginResponse} from "@/features/auth/types";
 
 export async function saveAuthSession(authSession: SocialLoginResponse) {
     await SecureStore.setItemAsync("accessToken", authSession.accessToken);
+    await SecureStore.setItemAsync("refreshToken", authSession.refreshToken);
     await SecureStore.setItemAsync("memberId", authSession.memberId.toString());
 }

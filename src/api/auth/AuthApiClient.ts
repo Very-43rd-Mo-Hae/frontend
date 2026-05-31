@@ -26,7 +26,7 @@ export const loginWithSocialToken = async (
 ): Promise<SocialLoginResponse> => {
     try {
         return await apiClient.post<SocialLoginResponse, SocialLoginRequest>(
-            "/api/v1/auth/social/login",
+            "/api/v1/auth/login",
             socialLoginRequest
         );
     } catch (error) {
