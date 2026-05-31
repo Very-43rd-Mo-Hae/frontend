@@ -8,6 +8,7 @@ import {
     SocialLoginResult,
 } from "@/features/auth/types";
 import {loginWithGoogle} from "@/features/auth/services/google-login";
+import {getDeviceName, getOrCreateDeviceId} from "@/lib/device-util";
 
 async function getSocialProviderCredential(
     provider: SocialLoginProvider,
@@ -24,12 +25,14 @@ async function getSocialProviderCredential(
     }
 }
 
-function createSocialLoginRequest(socialLoginResult: SocialLoginResult): SocialLoginRequest {
+async function createSocialLoginRequest(socialLoginResult: SocialLoginResult): Promise<SocialLoginRequest> {
     return {
         provider: socialLoginResult.provider,
         accessToken: socialLoginResult.accessToken,
         idToken: socialLoginResult.idToken,
         name: socialLoginResult.name,
+        deviceId: await getOrCreateDeviceId(),
+        deviceName: getDeviceName(),
     };
 }
 
@@ -37,7 +40,7 @@ export async function loginWithSocialProvider(
     provider: SocialLoginProvider,
 ): Promise<SocialLoginResponse> {
     const socialLoginResult = await getSocialProviderCredential(provider);
-    const authSession = await loginWithSocialToken(createSocialLoginRequest(socialLoginResult));
+    const authSession = await loginWithSocialToken(await createSocialLoginRequest(socialLoginResult));
 
     await saveAuthSession(authSession);
 
