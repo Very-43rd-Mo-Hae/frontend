@@ -1,4 +1,6 @@
 export type RingColor = 'cyan' | 'green' | 'yellow';
+export type RingSlotColor = RingColor;
+export type RingSlots = readonly (RingSlotColor | null | undefined)[];
 
 export const ringColorMap = {
   cyan: '#61dddd',

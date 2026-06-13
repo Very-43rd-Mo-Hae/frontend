@@ -6,6 +6,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .relink-hidden-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .relink-hidden-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 :root {
     --font-sans:
         Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, Helvetica Neue, Segoe UI,
