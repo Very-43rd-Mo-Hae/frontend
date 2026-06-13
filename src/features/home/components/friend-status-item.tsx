@@ -28,7 +28,7 @@ export function FriendStatusItem({
           </div>
         )}
       </div>
-      <p className="mt-[3px] text-center font-display text-[8px] leading-[10px] text-relink-ink">
+      <p className="mt-[3px] text-center font-display text-sm text-relink-ink">
         {name}
       </p>
     </div>

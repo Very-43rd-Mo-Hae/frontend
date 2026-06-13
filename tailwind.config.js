@@ -32,7 +32,14 @@ module.exports = {
                 relink: relinkColors,
             },
             fontFamily: {
-                sans: ['Jua']
+                sans: ['var(--relink-font-sans)'],
+                display: ['var(--relink-font-display)'],
+            },
+            fontSize: {
+                sm: ['12px', { lineHeight: '16px' }],
+                md: ['14px', { lineHeight: '18px' }],
+                lg: ['18px', { lineHeight: '24px' }],
+                xl: ['24px', { lineHeight: '32px' }],
             },
             boxShadow: {
                 'relink-card': '0px 1px 10px 0px #cdd0ff',
