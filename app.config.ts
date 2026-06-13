@@ -18,6 +18,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   ios: {
     icon: './assets/expo.icon',
+    bundleIdentifier: 'com.chyun7114.relinkfrontend'
   },
   android: {
     adaptiveIcon: {
