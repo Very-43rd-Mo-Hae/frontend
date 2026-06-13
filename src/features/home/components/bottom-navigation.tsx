@@ -21,7 +21,7 @@ const navigationItems: BottomNavigationItem[] = [
 
 export function BottomNavigation() {
   return (
-    <nav className="absolute bottom-[7px] left-0 right-0 flex h-[62px] items-center justify-center gap-[35px] bg-relink-white">
+    <nav className=" fixed z-50 absolute bottom-[7px] left-0 right-0 flex h-[62px] items-center justify-center gap-[35px] bg-relink-white">
       {navigationItems.map((item) => (
         <button
           key={item.label}

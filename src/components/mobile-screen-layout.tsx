@@ -1,11 +1,11 @@
 import type { PropsWithChildren } from 'react';
 
 export function MobileScreenLayout({ children }: PropsWithChildren) {
-  return (
-    <main className="flex min-h-screen h-100dvh items-center justify-center bg-relink-white">
-      <section className="relative h-[812px] w-[375px] overflow-hidden bg-relink-white">
-        {children}
-      </section>
-    </main>
-  );
+    return (
+        <main className="min-h-dvh bg-relink-white">
+            <section className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-relink-white">
+                {children}
+            </section>
+        </main>
+    );
 }
