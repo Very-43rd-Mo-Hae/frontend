@@ -1,11 +1,7 @@
-export type RingColor = 'cyan' | 'green' | 'yellow';
-export type RingSlotColor = RingColor;
-export type RingSlots = readonly (RingSlotColor | null | undefined)[];
-
-export const ringColorMap = {
-  cyan: '#61dddd',
-  green: '#74dc94',
-  yellow: '#fee73d',
-} as const;
-
-export const emptySlotColor = '#d9d9d9';
+export {
+  emptySlotColor,
+  ringColorMap,
+  type RingColor,
+  type RingSlotColor,
+  type RingSlots,
+} from '@/components/common/friend-status';

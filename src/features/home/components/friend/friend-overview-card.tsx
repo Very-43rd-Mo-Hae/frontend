@@ -1,6 +1,11 @@
+import { useState } from 'react';
+
 import { FriendOverviewHeader } from '@/features/home/components/friend/friend-overview-header';
-import { FriendStatusItem } from '@/features/home/components/friend/friend-status-item';
-import { type RingSlots } from '@/features/home/constants/ring-colors';
+import { FriendStatusModal } from '@/features/home/components/friend/friend-status-modal';
+import {
+    FriendStatusItem,
+    type RingSlots,
+} from '@/components/common/friend-status';
 
 type FriendOverview = {
     name: string;
@@ -38,22 +43,34 @@ const friends: FriendOverview[] = [
 ] as const;
 
 const FriendOverviewCard = () => {
-    return (
-        <section className="flex h-[142px] flex-none flex-col overflow-hidden rounded-[10px] border border-relink-card bg-relink-white p-3 shadow-relink-card">
-            <FriendOverviewHeader />
+    const [selectedFriend, setSelectedFriend] = useState<FriendOverview | null>(null);
 
-            <div className="relink-hidden-scrollbar mt-1 flex h-[96px] items-start overflow-x-auto overflow-y-hidden pt-1">
-                {friends.map((friend) => (
-                    <FriendStatusItem
-                        key={friend.name}
-                        name={friend.name}
-                        slots={friend.slots}
-                        isActive={friend.isActive}
-                        activeColor={friend.activeColor}
-                    />
-                ))}
-            </div>
-        </section>
+    return (
+        <>
+            <section className="flex h-[142px] flex-none flex-col overflow-hidden rounded-[10px] border border-relink-card bg-relink-white p-3 shadow-relink-card">
+                <FriendOverviewHeader />
+
+                <div className="relink-hidden-scrollbar mt-1 flex h-[96px] items-start overflow-x-auto overflow-y-hidden pt-1">
+                    {friends.map((friend) => (
+                        <FriendStatusItem
+                            key={friend.name}
+                            name={friend.name}
+                            slots={friend.slots}
+                            isActive={friend.isActive}
+                            activeColor={friend.activeColor}
+                            onClick={() => setSelectedFriend(friend)}
+                        />
+                    ))}
+                </div>
+            </section>
+
+            {selectedFriend && (
+                <FriendStatusModal
+                    slots={selectedFriend.slots}
+                    onClose={() => setSelectedFriend(null)}
+                />
+            )}
+        </>
     );
 };
 

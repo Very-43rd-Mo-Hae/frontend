@@ -1,6 +1,8 @@
 import { GenericAvatar } from '@/components/common/nav/generic-avatar';
-import { type RingSlots } from '@/features/home/constants/ring-colors';
-import { ProgressRow } from '@/features/home/components/recommend/progress-row';
+import {
+  ProgressRow,
+  type RingSlots,
+} from '@/components/common/friend-status';
 
 export type RecommendCardProps = {
   title: string;
