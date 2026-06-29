@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
+import { FloatingAddButton } from '@/components/common/floating-add-button';
 import { editableStatusOrder } from '@/features/schedule/constants';
-import { ScheduleFloatingActionButton } from '@/features/schedule/components/schedule-floating-action-button';
 import { ScheduleGrid } from '@/features/schedule/components/schedule-grid';
 import { ScheduleHeader } from '@/features/schedule/components/schedule-header';
 import { WeekNavigator } from '@/features/schedule/components/week-navigator';
@@ -64,7 +64,7 @@ export function ScheduleSelectionView() {
                     scheduledSlotMap={scheduledSlotMap}
                     onSlotClick={handleSlotClick}
                 />
-                <ScheduleFloatingActionButton />
+                <FloatingAddButton placement="inline" />
             </main>
         </div>
     );
