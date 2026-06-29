@@ -7,5 +7,11 @@ export const routePaths = {
     invite: '/invite/:inviteToken',
     friends: '/friends',
     chat: '/chat',
+    chatDirect: '/chat/direct',
+    chatAppointments: '/chat/appointments',
+    chatUnread: '/chat/unread',
+    chatAll: '/chat/all',
+    chatRoomPattern: '/chat/rooms/:roomId',
+    chatRoom: (roomId: string) => `/chat/rooms/${roomId}`,
     mypage: '/mypage',
 } as const;

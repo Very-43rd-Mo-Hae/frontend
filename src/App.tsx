@@ -11,6 +11,7 @@ export default function App() {
         location.pathname !== routePaths.appointmentSchedule &&
         location.pathname !== routePaths.appointmentFriends &&
         location.pathname !== routePaths.appointmentGroups &&
+        !location.pathname.startsWith('/chat/rooms/') &&
         !location.pathname.startsWith('/invite/');
 
     return (
