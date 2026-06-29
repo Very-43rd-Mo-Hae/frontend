@@ -8,6 +8,7 @@ import { AppRoutes } from '@/router/routes';
 export default function App() {
     const location = useLocation();
     const shouldShowBottomNavigation =
+        location.pathname !== routePaths.login &&
         location.pathname !== routePaths.appointmentSchedule &&
         location.pathname !== routePaths.appointmentFriends &&
         location.pathname !== routePaths.appointmentGroups &&

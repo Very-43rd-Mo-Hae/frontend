@@ -3,6 +3,7 @@ import type { EditableSlotStatus, ScheduledBlock, SlotStatus } from '@/features/
 export const weekDayLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
 export const hours = Array.from({ length: 16 }, (_, index) => index + 8);
+export const scheduleTimeSlots = Array.from({ length: 32 }, (_, index) => 8 + index * 0.5);
 
 export const editableStatusOrder: EditableSlotStatus[] = ['available', 'adjustable', 'unavailable'];
 

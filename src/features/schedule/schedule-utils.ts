@@ -1,11 +1,11 @@
-import { hours, scheduledBlocks, weekDayLabels } from '@/features/schedule/constants';
+import { scheduleTimeSlots, scheduledBlocks, weekDayLabels } from '@/features/schedule/constants';
 import type { EditableSlotStatus, ScheduledBlock } from '@/features/schedule/types';
 
 export function createInitialSlotStatuses() {
-    return hours.reduce<Record<string, EditableSlotStatus>>((statuses, hour) => {
+    return scheduleTimeSlots.reduce<Record<string, EditableSlotStatus>>((statuses, time) => {
         weekDayLabels.forEach((_, dayIndex) => {
-            const statusSeed = (dayIndex * 3 + hour) % 9;
-            const slotKey = getSlotKey(dayIndex, hour);
+            const statusSeed = (dayIndex * 3 + time * 2) % 9;
+            const slotKey = getSlotKey(dayIndex, time);
 
             statuses[slotKey] =
                 statusSeed === 0 || statusSeed === 5
@@ -21,16 +21,16 @@ export function createInitialSlotStatuses() {
 
 export function createScheduledSlotMap() {
     return scheduledBlocks.reduce<Map<string, ScheduledBlock>>((slotMap, block) => {
-        for (let hour = block.startHour; hour < block.endHour; hour += 1) {
-            slotMap.set(getSlotKey(block.dayIndex, hour), block);
+        for (let time = block.startHour; time < block.endHour; time += 0.5) {
+            slotMap.set(getSlotKey(block.dayIndex, time), block);
         }
 
         return slotMap;
     }, new Map());
 }
 
-export function getSlotKey(dayIndex: number, hour: number) {
-    return `${dayIndex}-${hour}`;
+export function getSlotKey(dayIndex: number, time: number) {
+    return `${dayIndex}-${time}`;
 }
 
 export function getWeekDates(date: Date) {

@@ -33,7 +33,7 @@ type ApiErrorPayload = {
 
 type TokenRefreshResponse = {
     accessToken: string;
-    refreshToken?: string;
+    refreshToken: string;
 };
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
@@ -154,13 +154,8 @@ async function refreshAccessToken() {
     }
 
     const response = await publicApi.post<ApiResponse<TokenRefreshResponse>>(
-        '/auth/re-issue',
-        {},
-        {
-            headers: {
-                Authorization: `Bearer ${refreshToken}`,
-            },
-        },
+        '/auth/reissue',
+        { refreshToken },
     );
 
     const tokens = unwrapRefreshResponse(response);

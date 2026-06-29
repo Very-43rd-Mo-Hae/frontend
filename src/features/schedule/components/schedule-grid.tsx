@@ -1,6 +1,6 @@
 import type { PointerEvent } from 'react';
 
-import { hours, statusConfig, weekDayLabels } from '@/features/schedule/constants';
+import { hours, scheduleTimeSlots, statusConfig, weekDayLabels } from '@/features/schedule/constants';
 import { getSlotKey } from '@/features/schedule/schedule-utils';
 import type { EditableSlotStatus, ScheduledBlock, SlotStatus } from '@/features/schedule/types';
 
@@ -9,8 +9,8 @@ type ScheduleGridProps = {
     slotStatuses: Record<string, EditableSlotStatus>;
     scheduledSlotMap: Map<string, ScheduledBlock>;
     selectedSlotKeys: Set<string>;
-    onSlotClick: (dayIndex: number, hour: number) => void;
-    onSlotPointerDown: (dayIndex: number, hour: number, event: PointerEvent<HTMLButtonElement>) => void;
+    onSlotClick: (dayIndex: number, time: number) => void;
+    onSlotPointerDown: (dayIndex: number, time: number, event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerUp: (event: PointerEvent<HTMLElement>) => void;
     onScheduledBlockClick: (scheduledBlock: ScheduledBlock) => void;
@@ -36,7 +36,7 @@ export function ScheduleGrid({
                 className="grid h-full gap-x-1"
                 style={{
                     gridTemplateColumns: '26px repeat(7, minmax(0, 1fr))',
-                    gridTemplateRows: '34px repeat(16, minmax(0, 1fr))',
+                    gridTemplateRows: '34px repeat(32, minmax(0, 1fr))',
                 }}
             >
                 <div aria-hidden="true" />
@@ -48,26 +48,40 @@ export function ScheduleGrid({
                 ))}
 
                 {hours.map((hour) => (
-                    <HourRow
+                    <div
                         key={hour}
-                        hour={hour}
-                        slotStatuses={slotStatuses}
-                        scheduledSlotMap={scheduledSlotMap}
-                        selectedSlotKeys={selectedSlotKeys}
-                        onSlotClick={onSlotClick}
-                        onSlotPointerDown={onSlotPointerDown}
-                        onSlotPointerMove={onSlotPointerMove}
-                        onSlotPointerUp={onSlotPointerUp}
-                        onScheduledBlockClick={onScheduledBlockClick}
-                    />
+                        className="col-start-1 flex items-start justify-center pt-1 text-md text-relink-ink"
+                        style={{ gridRow: `${getSlotRow(hour)} / span 2` }}
+                    >
+                        {hour}
+                    </div>
                 ))}
+
+                {Array.from({ length: 7 }, (_, dayIndex) =>
+                    scheduleTimeSlots.map((time) => (
+                        <ScheduleSlotCell
+                            key={getSlotKey(dayIndex, time)}
+                            dayIndex={dayIndex}
+                            time={time}
+                            slotStatuses={slotStatuses}
+                            scheduledSlotMap={scheduledSlotMap}
+                            selectedSlotKeys={selectedSlotKeys}
+                            onSlotClick={onSlotClick}
+                            onSlotPointerDown={onSlotPointerDown}
+                            onSlotPointerMove={onSlotPointerMove}
+                            onSlotPointerUp={onSlotPointerUp}
+                            onScheduledBlockClick={onScheduledBlockClick}
+                        />
+                    )),
+                )}
             </div>
         </section>
     );
 }
 
-function HourRow({
-    hour,
+function ScheduleSlotCell({
+    dayIndex,
+    time,
     slotStatuses,
     scheduledSlotMap,
     selectedSlotKeys,
@@ -77,91 +91,86 @@ function HourRow({
     onSlotPointerUp,
     onScheduledBlockClick,
 }: {
-    hour: number;
+    dayIndex: number;
+    time: number;
     slotStatuses: Record<string, EditableSlotStatus>;
     scheduledSlotMap: Map<string, ScheduledBlock>;
     selectedSlotKeys: Set<string>;
-    onSlotClick: (dayIndex: number, hour: number) => void;
-    onSlotPointerDown: (dayIndex: number, hour: number, event: PointerEvent<HTMLButtonElement>) => void;
+    onSlotClick: (dayIndex: number, time: number) => void;
+    onSlotPointerDown: (dayIndex: number, time: number, event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerUp: (event: PointerEvent<HTMLElement>) => void;
     onScheduledBlockClick: (scheduledBlock: ScheduledBlock) => void;
 }) {
-    return (
-        <>
-            <div className="flex items-start justify-center pt-1 text-md text-relink-ink">{hour}</div>
-            {weekDayLabels.map((_, dayIndex) => {
-                const slotKey = getSlotKey(dayIndex, hour);
-                const currentCell = getCellState(dayIndex, hour, slotStatuses, scheduledSlotMap);
+    const slotKey = getSlotKey(dayIndex, time);
+    const currentCell = getCellState(dayIndex, time, slotStatuses, scheduledSlotMap);
 
-                if (!currentCell) {
-                    return null;
+    if (!currentCell) {
+        return null;
+    }
+
+    const { scheduledBlock, status } = currentCell;
+    const previousCell = getCellState(dayIndex, time - 0.5, slotStatuses, scheduledSlotMap);
+    const nextCell = getCellState(dayIndex, time + 0.5, slotStatuses, scheduledSlotMap);
+    const connectsToPrevious = isConnectedCell(status, scheduledBlock, previousCell);
+    const connectsToNext = isConnectedCell(status, scheduledBlock, nextCell);
+    const isBlockStart = scheduledBlock?.startHour === time;
+    const radiusClassName = [
+        connectsToPrevious ? 'mt-0 rounded-t-none' : 'mt-0.5 rounded-t',
+        connectsToNext ? 'mb-0 rounded-b-none' : 'mb-0.5 rounded-b',
+    ].join(' ');
+    const selectedClassName = selectedSlotKeys.has(slotKey) ? 'z-10 ring-2 ring-relink-ink/40 ring-inset' : '';
+
+    return (
+        <button
+            type="button"
+            data-day-index={dayIndex}
+            data-time={time}
+            onPointerDown={(event) => {
+                if (!scheduledBlock) {
+                    onSlotPointerDown(dayIndex, time, event);
+                }
+            }}
+            onPointerMove={onSlotPointerMove}
+            onPointerUp={onSlotPointerUp}
+            onClick={() => {
+                if (scheduledBlock) {
+                    onScheduledBlockClick(scheduledBlock);
+                    return;
                 }
 
-                const { scheduledBlock, status } = currentCell;
-                const previousCell = getCellState(dayIndex, hour - 1, slotStatuses, scheduledSlotMap);
-                const nextCell = getCellState(dayIndex, hour + 1, slotStatuses, scheduledSlotMap);
-                const connectsToPrevious = isConnectedCell(status, scheduledBlock, previousCell);
-                const connectsToNext = isConnectedCell(status, scheduledBlock, nextCell);
-                const isBlockStart = scheduledBlock?.startHour === hour;
-                const radiusClassName = [
-                    connectsToPrevious ? 'mt-0 rounded-t-none' : 'mt-1 rounded-t',
-                    connectsToNext ? 'mb-0 rounded-b-none' : 'mb-1 rounded-b',
-                ].join(' ');
-                const selectedClassName = selectedSlotKeys.has(slotKey)
-                    ? 'z-10 ring-2 ring-relink-ink/40 ring-inset'
-                    : '';
-
-                return (
-                    <button
-                        key={slotKey}
-                        type="button"
-                        data-day-index={dayIndex}
-                        data-hour={hour}
-                        onPointerDown={(event) => {
-                            if (!scheduledBlock) {
-                                onSlotPointerDown(dayIndex, hour, event);
-                            }
-                        }}
-                        onPointerMove={onSlotPointerMove}
-                        onPointerUp={onSlotPointerUp}
-                        onClick={() => {
-                            if (scheduledBlock) {
-                                onScheduledBlockClick(scheduledBlock);
-                                return;
-                            }
-
-                            onSlotClick(dayIndex, hour);
-                        }}
-                        className={`relative min-h-0 w-full touch-none transition-transform active:scale-95 ${radiusClassName} ${selectedClassName} ${statusConfig[status].cellClassName}`}
-                        aria-label={`${weekDayLabels[dayIndex]}요일 ${hour}시 ${statusConfig[status].label}`}
-                    >
-                        {isBlockStart ? (
-                            <span
-                                className={`absolute left-1 top-1 max-w-[calc(100%-8px)] text-left text-[9px] leading-[11px] ${statusConfig[status].textClassName}`}
-                            >
-                                <span className="block truncate">{scheduledBlock.title}</span>
-                                <span className="block truncate">{scheduledBlock.location}</span>
-                            </span>
-                        ) : null}
-                    </button>
-                );
-            })}
-        </>
+                onSlotClick(dayIndex, time);
+            }}
+            className={`relative min-h-0 w-full touch-none transition-transform active:scale-95 ${radiusClassName} ${selectedClassName} ${statusConfig[status].cellClassName}`}
+            style={{
+                gridColumn: dayIndex + 2,
+                gridRow: getSlotRow(time),
+            }}
+            aria-label={`${weekDayLabels[dayIndex]}요일 ${formatTime(time)} ${statusConfig[status].label}`}
+        >
+            {isBlockStart ? (
+                <span
+                    className={`absolute left-1 top-1 max-w-[calc(100%-8px)] text-left text-[9px] leading-[11px] ${statusConfig[status].textClassName}`}
+                >
+                    <span className="block truncate">{scheduledBlock.title}</span>
+                    <span className="block truncate">{scheduledBlock.location}</span>
+                </span>
+            ) : null}
+        </button>
     );
 }
 
 function getCellState(
     dayIndex: number,
-    hour: number,
+    time: number,
     slotStatuses: Record<string, EditableSlotStatus>,
     scheduledSlotMap: Map<string, ScheduledBlock>,
 ): ScheduleCellState | null {
-    if (!hours.includes(hour)) {
+    if (!scheduleTimeSlots.includes(time)) {
         return null;
     }
 
-    const slotKey = getSlotKey(dayIndex, hour);
+    const slotKey = getSlotKey(dayIndex, time);
     const scheduledBlock = scheduledSlotMap.get(slotKey);
 
     return {
@@ -189,4 +198,15 @@ function isConnectedCell(
     }
 
     return true;
+}
+
+function getSlotRow(time: number) {
+    return 2 + Math.round((time - 8) * 2);
+}
+
+function formatTime(time: number) {
+    const hour = Math.floor(time);
+    const minute = time % 1 === 0 ? '00' : '30';
+
+    return `${String(hour).padStart(2, '0')}:${minute}`;
 }

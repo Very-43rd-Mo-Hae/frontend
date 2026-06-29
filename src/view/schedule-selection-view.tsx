@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AppointmentFriend } from '@/features/schedule/components/appointment-friend-types';
 import { AppointmentProposalReview } from '@/features/schedule/components/appointment-proposal-review';
@@ -9,9 +9,12 @@ import {
 } from '@/features/schedule/components/schedule-selection-screen';
 import { editableStatusOrder } from '@/features/schedule/constants';
 import {
+    fetchWeeklySchedule,
+    updateScheduleSlots,
+    type ScheduleState,
+} from '@/api/schedule';
+import {
     addDays,
-    createInitialSlotStatuses,
-    createScheduledSlotMap,
     formatWeekTitle,
     getSlotKey,
     getWeekDates,
@@ -41,20 +44,23 @@ export function ScheduleSelectionView({
     mode = 'calendar',
 }: ScheduleSelectionViewProps) {
     const [baseDate, setBaseDate] = useState(() => new Date());
-    const [slotStatuses, setSlotStatuses] = useState<Record<string, EditableSlotStatus>>(() =>
-        createInitialSlotStatuses(),
-    );
+    const [scheduleState, setScheduleState] = useState<ScheduleState>(() => ({
+        slotStatuses: {},
+        scheduledSlotMap: new Map(),
+    }));
     const [selectedSchedule, setSelectedSchedule] = useState<ScheduledBlock | null>(null);
     const [appointmentSelection, setAppointmentSelection] = useState<AppointmentSelection | null>(null);
     const [appointmentProposal, setAppointmentProposal] = useState<AppointmentProposalState | null>(null);
     const [dragSelection, setDragSelection] = useState<DragSelection | null>(null);
     const [statusChangeMenu, setStatusChangeMenu] = useState<StatusChangeMenuState | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const dragSelectionRef = useRef<DragSelection | null>(null);
     const suppressNextClickRef = useRef(false);
 
     const weekDates = useMemo(() => getWeekDates(baseDate), [baseDate]);
     const weekTitle = useMemo(() => formatWeekTitle(weekDates), [weekDates]);
-    const scheduledSlotMap = useMemo(() => createScheduledSlotMap(), []);
+    const { slotStatuses, scheduledSlotMap } = scheduleState;
     const selectedSlotKeys = useMemo(
         () => new Set(statusChangeMenu?.slotKeys ?? dragSelection?.slotKeys ?? appointmentSelection?.slotKeys ?? []),
         [appointmentSelection, dragSelection, statusChangeMenu],
@@ -64,13 +70,46 @@ export function ScheduleSelectionView({
         setBaseDate((current) => addDays(current, weekOffset * 7));
     };
 
+    useEffect(() => {
+        let ignore = false;
+
+        setIsLoading(true);
+        setStatusChangeMenu(null);
+        setSelectedSchedule(null);
+        setAppointmentSelection(null);
+
+        fetchWeeklySchedule(baseDate)
+            .then((nextScheduleState) => {
+                if (!ignore) {
+                    setScheduleState(nextScheduleState);
+                }
+            })
+            .catch(() => {
+                if (!ignore) {
+                    setScheduleState({
+                        slotStatuses: {},
+                        scheduledSlotMap: new Map(),
+                    });
+                }
+            })
+            .finally(() => {
+                if (!ignore) {
+                    setIsLoading(false);
+                }
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [baseDate]);
+
     const updateDragSelection = (nextSelection: DragSelection | null) => {
         dragSelectionRef.current = nextSelection;
         setDragSelection(nextSelection);
     };
 
-    const handleSlotClick = (dayIndex: number, hour: number) => {
-        if (mode === 'appointment') {
+    const handleSlotClick = async (dayIndex: number, time: number) => {
+        if (mode === 'appointment' || isSaving) {
             return;
         }
 
@@ -79,30 +118,24 @@ export function ScheduleSelectionView({
             return;
         }
 
-        const slotKey = getSlotKey(dayIndex, hour);
+        const slotKey = getSlotKey(dayIndex, time);
+        const currentStatus = slotStatuses[slotKey] ?? 'available';
+        const currentIndex = editableStatusOrder.indexOf(currentStatus);
+        const nextStatus = editableStatusOrder[(currentIndex + 1) % editableStatusOrder.length];
 
-        setSlotStatuses((current) => {
-            const currentStatus = current[slotKey] ?? 'available';
-            const currentIndex = editableStatusOrder.indexOf(currentStatus);
-            const nextStatus = editableStatusOrder[(currentIndex + 1) % editableStatusOrder.length];
-
-            return {
-                ...current,
-                [slotKey]: nextStatus,
-            };
-        });
+        await saveSlotStatusChanges([slotKey], nextStatus);
     };
 
     const handleSlotPointerDown = (
         dayIndex: number,
-        hour: number,
+        time: number,
         event: PointerEvent<HTMLButtonElement>,
     ) => {
-        if (event.button !== 0 || scheduledSlotMap.has(getSlotKey(dayIndex, hour))) {
+        if (event.button !== 0 || scheduledSlotMap.has(getSlotKey(dayIndex, time))) {
             return;
         }
 
-        const slotKey = getSlotKey(dayIndex, hour);
+        const slotKey = getSlotKey(dayIndex, time);
         const anchorStatus = slotStatuses[slotKey] ?? 'available';
 
         if (mode === 'appointment' && !isAppointmentSelectableStatus(anchorStatus)) {
@@ -126,15 +159,15 @@ export function ScheduleSelectionView({
 
         const target = document
             .elementFromPoint(event.clientX, event.clientY)
-            ?.closest<HTMLButtonElement>('[data-day-index][data-hour]');
+            ?.closest<HTMLButtonElement>('[data-day-index][data-time]');
 
         if (!target) {
             return;
         }
 
         const dayIndex = Number(target.dataset.dayIndex);
-        const hour = Number(target.dataset.hour);
-        const slotKey = getSlotKey(dayIndex, hour);
+        const time = Number(target.dataset.time);
+        const slotKey = getSlotKey(dayIndex, time);
         const slotStatus = slotStatuses[slotKey] ?? 'available';
 
         if (scheduledSlotMap.has(slotKey)) {
@@ -194,21 +227,32 @@ export function ScheduleSelectionView({
         updateDragSelection(null);
     };
 
-    const changeSelectedSlotsStatus = (nextStatus: EditableSlotStatus) => {
-        if (!statusChangeMenu) {
+    const changeSelectedSlotsStatus = async (nextStatus: EditableSlotStatus) => {
+        if (!statusChangeMenu || isSaving) {
             return;
         }
 
-        setSlotStatuses((current) => {
-            const nextStatuses = { ...current };
-
-            statusChangeMenu.slotKeys.forEach((slotKey) => {
-                nextStatuses[slotKey] = nextStatus;
-            });
-
-            return nextStatuses;
-        });
+        await saveSlotStatusChanges(statusChangeMenu.slotKeys, nextStatus);
         setStatusChangeMenu(null);
+    };
+
+    const saveSlotStatusChanges = async (slotKeys: string[], nextStatus: EditableSlotStatus) => {
+        setIsSaving(true);
+
+        try {
+            const changedStatuses = await updateScheduleSlots(slotKeys, nextStatus, weekDates);
+            setScheduleState((current) => ({
+                ...current,
+                slotStatuses: {
+                    ...current.slotStatuses,
+                    ...changedStatuses,
+                },
+            }));
+        } catch {
+            return;
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (appointmentProposal) {
@@ -233,6 +277,8 @@ export function ScheduleSelectionView({
             statusChangeMenu={statusChangeMenu}
             selectedSchedule={selectedSchedule}
             appointmentSelection={appointmentSelection}
+            isLoading={isLoading}
+            isSaving={isSaving}
             onPointerCancel={() => updateDragSelection(null)}
             onPointerUp={handleSlotPointerUp}
             onPreviousWeek={() => changeWeek(-1)}
@@ -271,21 +317,24 @@ function isAppointmentSelectableStatus(status: EditableSlotStatus) {
 function formatAppointmentSelectionLabel(slotKeys: string[], weekDates: Date[]) {
     const slots = slotKeys
         .map((slotKey) => {
-            const [dayIndex, hour] = slotKey.split('-').map(Number);
+            const [dayIndex, time] = slotKey.split('-').map(Number);
 
-            return { dayIndex, hour };
+            return { dayIndex, time };
         })
-        .sort((first, second) => first.dayIndex - second.dayIndex || first.hour - second.hour);
+        .sort((first, second) => first.dayIndex - second.dayIndex || first.time - second.time);
     const firstSlot = slots[0];
     const sameDaySlots = slots.filter((slot) => slot.dayIndex === firstSlot.dayIndex);
-    const startHour = Math.min(...sameDaySlots.map((slot) => slot.hour));
-    const endHour = Math.max(...sameDaySlots.map((slot) => slot.hour)) + 1;
+    const startTime = Math.min(...sameDaySlots.map((slot) => slot.time));
+    const endTime = Math.max(...sameDaySlots.map((slot) => slot.time)) + 0.5;
     const date = weekDates[firstSlot.dayIndex];
     const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
 
-    return `${date.getDate()}일 (${weekday}) ${formatHour(startHour)} ~ ${formatHour(endHour)}`;
+    return `${date.getDate()}일 (${weekday}) ${formatHour(startTime)} ~ ${formatHour(endTime)}`;
 }
 
-function formatHour(hour: number) {
-    return `${String(hour).padStart(2, '0')}:00`;
+function formatHour(time: number) {
+    const hour = Math.floor(time);
+    const minute = time % 1 === 0 ? '00' : '30';
+
+    return `${String(hour).padStart(2, '0')}:${minute}`;
 }

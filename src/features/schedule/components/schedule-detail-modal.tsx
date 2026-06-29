@@ -55,6 +55,9 @@ export function ScheduleDetailModal({ schedule, onClose }: ScheduleDetailModalPr
     );
 }
 
-function formatHour(hour: number) {
-    return `${String(hour).padStart(2, '0')}:00`;
+function formatHour(time: number) {
+    const hour = Math.floor(time);
+    const minute = time % 1 === 0 ? '00' : '30';
+
+    return `${String(hour).padStart(2, '0')}:${minute}`;
 }

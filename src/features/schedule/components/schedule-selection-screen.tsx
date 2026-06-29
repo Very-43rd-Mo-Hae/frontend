@@ -1,6 +1,7 @@
 import type { PointerEvent } from 'react';
 
 import { FloatingAddButton } from '@/components/common/floating-add-button';
+import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { AppointmentFriendSelection } from '@/features/schedule/components/appointment-friend-selection';
 import type { AppointmentFriend } from '@/features/schedule/components/appointment-friend-types';
 import { ScheduleDetailModal } from '@/features/schedule/components/schedule-detail-modal';
@@ -30,12 +31,14 @@ type ScheduleSelectionScreenProps = {
     statusChangeMenu: StatusChangeMenuState | null;
     selectedSchedule: ScheduledBlock | null;
     appointmentSelection: AppointmentSelection | null;
+    isLoading: boolean;
+    isSaving: boolean;
     onPointerCancel: () => void;
     onPointerUp: (event: PointerEvent<HTMLElement>) => void;
     onPreviousWeek: () => void;
     onNextWeek: () => void;
-    onSlotClick: (dayIndex: number, hour: number) => void;
-    onSlotPointerDown: (dayIndex: number, hour: number, event: PointerEvent<HTMLButtonElement>) => void;
+    onSlotClick: (dayIndex: number, time: number) => void;
+    onSlotPointerDown: (dayIndex: number, time: number, event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerUp: (event: PointerEvent<HTMLElement>) => void;
     onScheduledBlockClick: (schedule: ScheduledBlock) => void;
@@ -57,6 +60,8 @@ export function ScheduleSelectionScreen({
     statusChangeMenu,
     selectedSchedule,
     appointmentSelection,
+    isLoading,
+    isSaving,
     onPointerCancel,
     onPointerUp,
     onPreviousWeek,
@@ -82,17 +87,30 @@ export function ScheduleSelectionScreen({
 
             <main className="relink-hidden-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-2">
                 <WeekNavigator title={weekTitle} onPreviousWeek={onPreviousWeek} onNextWeek={onNextWeek} />
-                <ScheduleGrid
-                    weekDates={weekDates}
-                    slotStatuses={slotStatuses}
-                    scheduledSlotMap={scheduledSlotMap}
-                    selectedSlotKeys={selectedSlotKeys}
-                    onSlotClick={onSlotClick}
-                    onSlotPointerDown={onSlotPointerDown}
-                    onSlotPointerMove={onSlotPointerMove}
-                    onSlotPointerUp={onSlotPointerUp}
-                    onScheduledBlockClick={onScheduledBlockClick}
-                />
+                <div className="relative">
+                    {isLoading ? (
+                        <div className="flex min-h-[600px] items-center justify-center rounded bg-relink-white shadow-relink-card">
+                            <LoadingSpinner label="스케줄을 불러오는 중" />
+                        </div>
+                    ) : (
+                        <ScheduleGrid
+                            weekDates={weekDates}
+                            slotStatuses={slotStatuses}
+                            scheduledSlotMap={scheduledSlotMap}
+                            selectedSlotKeys={selectedSlotKeys}
+                            onSlotClick={onSlotClick}
+                            onSlotPointerDown={onSlotPointerDown}
+                            onSlotPointerMove={onSlotPointerMove}
+                            onSlotPointerUp={onSlotPointerUp}
+                            onScheduledBlockClick={onScheduledBlockClick}
+                        />
+                    )}
+                    {isSaving ? (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center rounded bg-relink-white/70 backdrop-blur-[1px]">
+                            <LoadingSpinner label="스케줄을 저장하는 중" size={48} />
+                        </div>
+                    ) : null}
+                </div>
                 {showFloatingAction ? <FloatingAddButton placement="inline" /> : null}
             </main>
 
