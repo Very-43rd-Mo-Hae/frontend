@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import {
+    deleteNotification,
+    fetchNotifications,
+    markAllNotificationsRead,
+} from '@/api/notifications';
 import { routePaths } from '@/constants/route-paths';
 import { NotificationInboxScreen } from '@/features/notifications/components/notification-inbox-screen';
-import { mockNotifications } from '@/features/notifications/notification-mock-data';
 import type { NotificationItem } from '@/features/notifications/types';
 
 const pageSize = 20;
@@ -11,19 +15,44 @@ const pageSize = 20;
 export function NotificationInboxView() {
     const navigate = useNavigate();
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
-    const [visibleCount, setVisibleCount] = useState(pageSize);
-    const [notifications, setNotifications] = useState(mockNotifications);
+    const [page, setPage] = useState(0);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [hasNext, setHasNext] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const groupedNotifications = useMemo(
         () => groupChatRoomNotifications(notifications),
         [notifications],
     );
-    const visibleNotifications = useMemo(
-        () => groupedNotifications.slice(0, visibleCount),
-        [groupedNotifications, visibleCount],
-    );
-    const hasNext = visibleCount < groupedNotifications.length;
+
+    useEffect(() => {
+        let ignore = false;
+
+        setIsLoading(true);
+        fetchNotifications(0, pageSize)
+            .then((response) => {
+                if (!ignore) {
+                    setNotifications(response.notifications);
+                    setPage(response.page);
+                    setHasNext(response.hasNext);
+                }
+            })
+            .catch(() => {
+                if (!ignore) {
+                    setNotifications([]);
+                    setHasNext(false);
+                }
+            })
+            .finally(() => {
+                if (!ignore) {
+                    setIsLoading(false);
+                }
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
 
     useEffect(() => {
         const target = loadMoreRef.current;
@@ -37,19 +66,23 @@ export function NotificationInboxView() {
             }
 
             setIsLoading(true);
-            window.setTimeout(() => {
-                setVisibleCount((current) => Math.min(current + pageSize, groupedNotifications.length));
-                setIsLoading(false);
-            }, 250);
+            fetchNotifications(page + 1, pageSize)
+                .then((response) => {
+                    setNotifications((current) => [...current, ...response.notifications]);
+                    setPage(response.page);
+                    setHasNext(response.hasNext);
+                })
+                .finally(() => setIsLoading(false));
         });
 
         observer.observe(target);
 
         return () => observer.disconnect();
-    }, [groupedNotifications.length, hasNext, isLoading]);
+    }, [hasNext, isLoading, page]);
 
     function handleMarkAllRead() {
         const readAt = new Date().toISOString();
+        void markAllNotificationsRead();
         setNotifications((current) => current.map((notification) => ({
             ...notification,
             read: true,
@@ -59,6 +92,7 @@ export function NotificationInboxView() {
 
     function handleDelete(notification: NotificationItem) {
         const idsToDelete = new Set(notification.mergedIds ?? [notification.id]);
+        idsToDelete.forEach((id) => deleteNotification(id));
         setNotifications((current) => current.filter((item) => !idsToDelete.has(item.id)));
     }
 
@@ -77,7 +111,7 @@ export function NotificationInboxView() {
 
     return (
         <NotificationInboxScreen
-            notifications={visibleNotifications}
+            notifications={groupedNotifications}
             isLoading={isLoading}
             loadMoreRef={loadMoreRef}
             onBack={() => navigate(routePaths.home)}

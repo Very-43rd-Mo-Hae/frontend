@@ -1,6 +1,7 @@
 import type { PointerEvent } from 'react';
 import { useMemo, useRef } from 'react';
 
+import { toCalendarPreviewBlocks } from '@/features/schedule/components/appointment-calendar-utils';
 import { OverlapCalendarGrid } from '@/features/schedule/components/overlap-calendar-grid';
 import { SelectedFriendsPreviewCard } from '@/features/schedule/components/selected-friends-preview-card';
 import {
@@ -30,9 +31,10 @@ export function AppointmentOverlapTimeSelectionView({
         () => new Set(selectedTimeSlots.map((slot) => getTimeSlotKey(slot.dayIndex, slot.time))),
         [selectedTimeSlots],
     );
+    const previewBlocks = useMemo(() => toCalendarPreviewBlocks(selectedFriends), [selectedFriends]);
 
     const startDrag = (slot: TimeSlot, event: PointerEvent<HTMLButtonElement>) => {
-        if (event.button !== 0 || !isSelectablePreviewSlot(slot)) {
+        if (event.button !== 0 || !isSelectablePreviewSlot(slot, previewBlocks)) {
             return;
         }
 
@@ -58,7 +60,7 @@ export function AppointmentOverlapTimeSelectionView({
             time: Number(target.dataset.time),
         };
 
-        if (!isSelectablePreviewSlot(slot)) {
+        if (!isSelectablePreviewSlot(slot, previewBlocks)) {
             return;
         }
 
@@ -101,6 +103,7 @@ export function AppointmentOverlapTimeSelectionView({
 
             <section className="mt-4 rounded bg-relink-white px-3 pb-3 pt-3 shadow-relink-card">
                 <OverlapCalendarGrid
+                    blocks={previewBlocks}
                     selectedSlotKeys={selectedSlotKeys}
                     onSlotPointerDown={startDrag}
                     onSlotPointerMove={moveDrag}

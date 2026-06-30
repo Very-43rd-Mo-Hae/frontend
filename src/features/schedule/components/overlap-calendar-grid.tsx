@@ -3,25 +3,28 @@ import type { PointerEvent } from 'react';
 import {
     multipleStatusClassNames,
     previewDates,
+    type FriendCalendarPreviewBlock,
 } from '@/components/common/friend-calendar-preview-modal';
+import { getPreviewSlotStatus } from '@/features/schedule/components/appointment-calendar-utils';
 import {
     formatPreviewTime,
     getOverlapSlotRow,
-    getPreviewSlotStatus,
     getTimeSlotKey,
     halfHourTimes,
     type TimeSlot,
-    unselectableStatus,
+    unselectableStatuses,
 } from '@/features/schedule/components/appointment-friend-first-utils';
 import { hours, weekDayLabels } from '@/features/schedule/constants';
 
 type OverlapCalendarGridProps = {
+    blocks?: FriendCalendarPreviewBlock[];
     selectedSlotKeys: Set<string>;
     onSlotPointerDown: (slot: TimeSlot, event: PointerEvent<HTMLButtonElement>) => void;
     onSlotPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
 };
 
 export function OverlapCalendarGrid({
+    blocks,
     selectedSlotKeys,
     onSlotPointerDown,
     onSlotPointerMove,
@@ -54,15 +57,15 @@ export function OverlapCalendarGrid({
 
             {Array.from({ length: 7 }, (_, dayIndex) =>
                 halfHourTimes.map((time) => {
-                    const status = getPreviewSlotStatus(dayIndex, time);
+                    const status = getPreviewSlotStatus(blocks, dayIndex, time);
                     const slotKey = getTimeSlotKey(dayIndex, time);
 
                     if (!status) {
                         return null;
                     }
 
-                    const previousStatus = getPreviewSlotStatus(dayIndex, time - 0.5);
-                    const nextStatus = getPreviewSlotStatus(dayIndex, time + 0.5);
+                    const previousStatus = getPreviewSlotStatus(blocks, dayIndex, time - 0.5);
+                    const nextStatus = getPreviewSlotStatus(blocks, dayIndex, time + 0.5);
                     const selectedClassName = selectedSlotKeys.has(slotKey)
                         ? 'z-10 ring-2 ring-relink-lavender-intense ring-inset'
                         : '';
@@ -76,7 +79,7 @@ export function OverlapCalendarGrid({
                             className={`touch-none ${multipleStatusClassNames[status]} ${selectedClassName} ${
                                 previousStatus === status ? 'rounded-t-none' : 'mt-0.5 rounded-t'
                             } ${nextStatus === status ? 'rounded-b-none' : 'mb-0.5 rounded-b'} ${
-                                status === unselectableStatus ? 'cursor-not-allowed' : ''
+                                unselectableStatuses.has(status) ? 'cursor-not-allowed' : ''
                             }`}
                             style={{
                                 gridColumn: dayIndex + 2,

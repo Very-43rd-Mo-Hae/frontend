@@ -2,12 +2,8 @@ import type { PointerEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { fetchAvailableAppointmentFriends } from '@/api/appointments';
-import {
-    FriendCalendarPreviewModal,
-    type FriendCalendarPreviewBlock,
-    type PreviewSlotStatus,
-} from '@/components/common/friend-calendar-preview-modal';
-import { appointmentFriends } from '@/features/schedule/components/appointment-friend-data';
+import { FriendCalendarPreviewModal } from '@/components/common/friend-calendar-preview-modal';
+import { toCalendarPreviewBlocks } from '@/features/schedule/components/appointment-calendar-utils';
 import { AppointmentFriendList } from '@/features/schedule/components/appointment-friend-list';
 import { AppointmentFriendSelectionHeader } from '@/features/schedule/components/appointment-friend-selection-header';
 import type { AppointmentFriend } from '@/features/schedule/components/appointment-friend-types';
@@ -32,7 +28,7 @@ export function AppointmentFriendSelection({ selection, onDismiss, onNext }: App
     const [sheetHeight, setSheetHeight] = useState(collapsedSheetHeight);
     const [selectedFriendNames, setSelectedFriendNames] = useState<string[]>([]);
     const [calendarPreviewNames, setCalendarPreviewNames] = useState<string[] | null>(null);
-    const [availableFriends, setAvailableFriends] = useState<AppointmentFriend[]>(appointmentFriends);
+    const [availableFriends, setAvailableFriends] = useState<AppointmentFriend[]>([]);
     const dragStateRef = useRef<SheetDragState | null>(null);
     const hasSelectedFriends = selectedFriendNames.length > 0;
     const selectedFriends = availableFriends.filter((friend) => selectedFriendNames.includes(friend.name));
@@ -44,7 +40,7 @@ export function AppointmentFriendSelection({ selection, onDismiss, onNext }: App
         let ignore = false;
 
         if (!selection.startAt || !selection.endAt) {
-            setAvailableFriends(appointmentFriends);
+            setAvailableFriends([]);
             return () => {
                 ignore = true;
             };
@@ -206,76 +202,4 @@ function SheetDragHandle({
 
 function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
-}
-
-function toCalendarPreviewBlocks(friends: AppointmentFriend[]) {
-    const calendars = friends.flatMap((friend) => (friend.calendar ? [friend.calendar] : []));
-    if (calendars.length === 0) {
-        return undefined;
-    }
-
-    const blockedSlots = new Map<string, FriendCalendarPreviewBlock>();
-    for (const calendar of calendars) {
-        const weekStart = parseDate(calendar.weekStartDate);
-        calendar.days.forEach((day) => {
-            const dayIndex = Math.round((parseDate(day.date).getTime() - weekStart.getTime()) / 86_400_000);
-            day.slots.forEach((slot) => {
-                const start = parseTimeValue(slot.startTime);
-                const end = parseTimeValue(slot.endTime);
-                if (dayIndex < 0 || dayIndex > 6 || start < 8 || start >= 24) {
-                    return;
-                }
-
-                const status = toPreviewSlotStatus(slot.status);
-                blockedSlots.set(`${dayIndex}-${start}-${end}-${status}`, {
-                    dayIndex,
-                    start,
-                    end,
-                    status,
-                });
-            });
-        });
-    }
-
-    return mergePreviewBlocks([...blockedSlots.values()]);
-}
-
-function mergePreviewBlocks(blocks: FriendCalendarPreviewBlock[]) {
-    return blocks
-        .sort((first, second) => first.dayIndex - second.dayIndex || first.start - second.start)
-        .reduce<FriendCalendarPreviewBlock[]>((merged, block) => {
-            const previous = merged[merged.length - 1];
-            if (previous && previous.dayIndex === block.dayIndex && previous.status === block.status && previous.end === block.start) {
-                previous.end = block.end;
-                return merged;
-            }
-
-            return [...merged, { ...block }];
-        }, []);
-}
-
-function toPreviewSlotStatus(status: string): PreviewSlotStatus {
-    switch (status) {
-        case 'APPOINTMENT':
-            return 'scheduled';
-        case 'UNAVAILABLE':
-            return 'unavailable';
-        case 'NEGOTIABLE':
-            return 'adjustable';
-        case 'AVAILABLE':
-        default:
-            return 'available';
-    }
-}
-
-function parseDate(date: string) {
-    const [year, month, day] = date.split('-').map(Number);
-
-    return new Date(year, month - 1, day);
-}
-
-function parseTimeValue(time: string) {
-    const [hour = '0', minute = '0'] = time.split(':');
-
-    return Number(hour) + Number(minute) / 60;
 }

@@ -17,45 +17,6 @@ type FriendCalendarPreviewModalProps = {
 
 export const previewDates = [4, 5, 6, 7, 8, 9, 10];
 
-const singleFriendBlocks: FriendCalendarPreviewBlock[] = [
-    { dayIndex: 0, start: 8, end: 16, status: 'unavailable' },
-    { dayIndex: 0, start: 22, end: 24, status: 'available' },
-    { dayIndex: 1, start: 22, end: 24, status: 'adjustable' },
-    { dayIndex: 2, start: 16, end: 19, status: 'unavailable' },
-    { dayIndex: 2, start: 19, end: 24, status: 'available' },
-    { dayIndex: 4, start: 17.5, end: 20, status: 'adjustable' },
-    { dayIndex: 4, start: 20, end: 24, status: 'available' },
-    { dayIndex: 5, start: 18, end: 24, status: 'available' },
-    { dayIndex: 6, start: 8, end: 16, status: 'available' },
-    { dayIndex: 6, start: 16, end: 19, status: 'adjustable' },
-    { dayIndex: 6, start: 22, end: 24, status: 'available' },
-];
-
-export const multipleFriendBlocks: FriendCalendarPreviewBlock[] = [
-    { dayIndex: 0, start: 8, end: 10.5, status: 'available' },
-    { dayIndex: 0, start: 11, end: 16, status: 'scheduled' },
-    { dayIndex: 0, start: 22, end: 24, status: 'available' },
-    { dayIndex: 1, start: 22, end: 24, status: 'scheduled' },
-    { dayIndex: 2, start: 16, end: 19, status: 'available' },
-    { dayIndex: 2, start: 19, end: 21, status: 'unavailable' },
-    { dayIndex: 2, start: 21, end: 21.5, status: 'available' },
-    { dayIndex: 2, start: 22, end: 22.5, status: 'unavailable' },
-    { dayIndex: 2, start: 22.5, end: 23, status: 'available' },
-    { dayIndex: 2, start: 23, end: 24, status: 'unavailable' },
-    { dayIndex: 4, start: 17.5, end: 20, status: 'available' },
-    { dayIndex: 4, start: 20, end: 24, status: 'unavailable' },
-    { dayIndex: 5, start: 18, end: 20, status: 'unavailable' },
-    { dayIndex: 5, start: 20, end: 21, status: 'unavailable' },
-    { dayIndex: 5, start: 21, end: 21.5, status: 'adjustable' },
-    { dayIndex: 5, start: 21.5, end: 22, status: 'scheduled' },
-    { dayIndex: 5, start: 22, end: 24, status: 'unavailable' },
-    { dayIndex: 6, start: 8, end: 10.5, status: 'unavailable' },
-    { dayIndex: 6, start: 11, end: 14, status: 'available' },
-    { dayIndex: 6, start: 14.5, end: 16, status: 'unavailable' },
-    { dayIndex: 6, start: 16, end: 18, status: 'scheduled' },
-    { dayIndex: 6, start: 22, end: 24, status: 'unavailable' },
-];
-
 const singleStatusClassNames: Record<PreviewSlotStatus, string> = {
     scheduled: 'bg-relink-lavender-intense',
     unavailable: 'bg-relink-schedulePink',
@@ -72,7 +33,7 @@ export const multipleStatusClassNames: Record<PreviewSlotStatus, string> = {
 
 export function FriendCalendarPreviewModal({ friendNames, blocks: providedBlocks, onClose }: FriendCalendarPreviewModalProps) {
     const isMultiple = friendNames.length > 1;
-    const blocks = providedBlocks ?? (isMultiple ? multipleFriendBlocks : singleFriendBlocks);
+    const blocks = providedBlocks ?? [];
     const statusClassNames = isMultiple ? multipleStatusClassNames : singleStatusClassNames;
     const title = isMultiple ? `${friendNames.length}명 친구 캘린더` : `${friendNames[0]} 캘린더`;
 

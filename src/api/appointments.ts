@@ -29,6 +29,15 @@ type AvailableFriendListResponse = {
     }[];
 };
 
+type FriendCalendarListResponse = {
+    friends: {
+        memberId: number;
+        name: string;
+        imageUrl: string | null;
+        calendar: AppointmentCalendar;
+    }[];
+};
+
 type AppointmentResponse = {
     appointmentId: number;
     title: string;
@@ -66,4 +75,33 @@ export async function fetchAvailableAppointmentFriends(startAt: string, endAt: s
 
 export async function createAppointment(request: CreateAppointmentRequest) {
     return apiClient.post<AppointmentResponse, CreateAppointmentRequest>('/appointments', request);
+}
+
+export async function fetchAppointmentFriendCalendars(memberIds: number[], date: Date) {
+    if (memberIds.length === 0) {
+        return [];
+    }
+
+    const response = await apiClient.get<FriendCalendarListResponse>('/appointments/friend-calendars', {
+        params: {
+            memberIds: memberIds.join(','),
+            date: formatDate(date),
+        },
+    });
+
+    return response.friends.map<AppointmentFriend>((friend) => ({
+        memberId: friend.memberId,
+        name: friend.name,
+        imageUrl: friend.imageUrl,
+        calendar: friend.calendar,
+        availability: ['available', 'available', 'available', 'available', 'available', 'available', 'available', 'empty'],
+    }));
+}
+
+function formatDate(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
 }

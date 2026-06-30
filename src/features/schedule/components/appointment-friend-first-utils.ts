@@ -1,8 +1,5 @@
-import {
-    multipleFriendBlocks,
-    previewDates,
-    type PreviewSlotStatus,
-} from '@/components/common/friend-calendar-preview-modal';
+import { previewDates, type FriendCalendarPreviewBlock } from '@/components/common/friend-calendar-preview-modal';
+import { getPreviewSlotStatus } from '@/features/schedule/components/appointment-calendar-utils';
 import type { AvailabilitySegmentStatus } from '@/features/schedule/components/appointment-friend-types';
 import { weekDayLabels } from '@/features/schedule/constants';
 
@@ -22,17 +19,12 @@ export const statusClassNames: Record<AvailabilitySegmentStatus, string> = {
 };
 
 export const halfHourTimes = Array.from({ length: 32 }, (_, index) => 8 + index * 0.5);
-export const unselectableStatus: PreviewSlotStatus = 'scheduled';
+export const unselectableStatuses = new Set(['scheduled', 'unavailable']);
 
-export function getPreviewSlotStatus(dayIndex: number, time: number) {
-    return multipleFriendBlocks.find((block) => block.dayIndex === dayIndex && block.start <= time && time < block.end)
-        ?.status;
-}
+export function isSelectablePreviewSlot(slot: TimeSlot, blocks?: FriendCalendarPreviewBlock[]) {
+    const status = getPreviewSlotStatus(blocks, slot.dayIndex, slot.time);
 
-export function isSelectablePreviewSlot(slot: TimeSlot) {
-    const status = getPreviewSlotStatus(slot.dayIndex, slot.time);
-
-    return Boolean(status && status !== unselectableStatus);
+    return Boolean(status && !unselectableStatuses.has(status));
 }
 
 export function getTimeSlotKey(dayIndex: number, time: number) {
