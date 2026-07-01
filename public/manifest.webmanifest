@@ -1,7 +1,7 @@
 {
-  "name": "ReLink",
-  "short_name": "ReLink",
-  "description": "친구들과 약속 가능한 시간을 빠르게 확인하는 ReLink",
+  "name": "모해?",
+  "short_name": "모해?",
+  "description": "친구들과 약속 가능한 시간을 빠르게 확인하는 모해?",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -9,6 +9,24 @@
   "background_color": "#ffffff",
   "theme_color": "#7f87ff",
   "icons": [
+    {
+      "src": "/icons/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",

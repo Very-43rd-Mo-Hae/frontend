@@ -41,7 +41,7 @@ export function HomeHeader() {
 
     return (
         <header className="flex h-14 flex-none items-center justify-between px-3 py-2">
-            <img src={logoImage} alt="ReLink logo" className="h-12 w-12 object-contain" />
+            <img src={logoImage} alt="모해? logo" className="h-12 w-12 object-contain" />
 
             <div className="flex items-center gap-2">
                 <button

@@ -7,6 +7,7 @@ type KakaoSdk = {
     isInitialized: () => boolean;
     Auth: {
         login: (options: {
+            scope?: string;
             success: (response: KakaoAuthResponse) => void;
             fail: (error: unknown) => void;
         }) => void;
@@ -73,6 +74,7 @@ export async function requestKakaoAccessToken() {
 
     return new Promise<string>((resolve, reject) => {
         window.Kakao?.Auth.login({
+            scope: 'account_email',
             success: (response) => resolve(response.access_token),
             fail: reject,
         });

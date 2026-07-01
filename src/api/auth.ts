@@ -10,28 +10,32 @@ type SocialLoginRequest = {
     name?: string;
     deviceId?: string;
     deviceName?: string;
+    restoreAccount?: boolean;
 };
 
-type SocialLoginResponse = {
+export type SocialLoginResponse = {
     memberId: number;
-    accessToken: string;
-    refreshToken: string;
-    accessTokenExpiresIn: number;
+    accessToken?: string;
+    refreshToken?: string;
+    accessTokenExpiresIn?: number;
+    requiresAccountRestore?: boolean;
 };
 
 const DEVICE_ID_KEY = 'relink.deviceId';
 
-export async function loginWithGoogleIdToken(idToken: string) {
+export async function loginWithGoogleIdToken(idToken: string, options?: { restoreAccount?: boolean }) {
     return login({
         provider: 'GOOGLE',
         idToken,
+        restoreAccount: options?.restoreAccount,
     });
 }
 
-export async function loginWithKakaoAccessToken(accessToken: string) {
+export async function loginWithKakaoAccessToken(accessToken: string, options?: { restoreAccount?: boolean }) {
     return login({
         provider: 'KAKAO',
         accessToken,
+        restoreAccount: options?.restoreAccount,
     });
 }
 
@@ -52,10 +56,12 @@ async function login(request: Omit<SocialLoginRequest, 'deviceId' | 'deviceName'
         deviceName: getDeviceName(),
     });
 
-    saveAuthTokens({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-    });
+    if (!response.requiresAccountRestore && response.accessToken && response.refreshToken) {
+        saveAuthTokens({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+        });
+    }
 
     return response;
 }

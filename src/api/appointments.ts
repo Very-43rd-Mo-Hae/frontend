@@ -51,6 +51,12 @@ type AppointmentResponse = {
     }[];
 };
 
+export type UpcomingAppointment = AppointmentResponse;
+
+type UpcomingAppointmentListResponse = {
+    appointments: UpcomingAppointment[];
+};
+
 type CreateAppointmentRequest = {
     title: string;
     startAt: string;
@@ -71,6 +77,14 @@ export async function fetchAvailableAppointmentFriends(startAt: string, endAt: s
         calendar: friend.calendar,
         availability: ['available', 'available', 'available', 'available', 'available', 'available', 'available', 'empty'],
     }));
+}
+
+export async function fetchUpcomingAppointments(limit = 5) {
+    const response = await apiClient.get<UpcomingAppointmentListResponse>('/appointments/upcoming', {
+        params: { limit },
+    });
+
+    return response.appointments;
 }
 
 export async function createAppointment(request: CreateAppointmentRequest) {
